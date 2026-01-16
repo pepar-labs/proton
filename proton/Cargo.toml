@@ -1,0 +1,19 @@
+[package]
+name = "proton"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+taffy = "0.7"
+image = { workspace = true }
+ab_glyph = "0.2"
+
+[dev-dependencies]
+anyhow = { workspace = true }
+driver = { path = "../driver" }
+
+[[example]]
+name = "hello"
+
+[[example]]
+name = "image_demo"

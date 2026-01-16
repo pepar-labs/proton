@@ -1,0 +1,7 @@
+[workspace]
+resolver = "2"
+members = ["driver", "proton"]
+
+[workspace.dependencies]
+anyhow = "1.0"
+image = "0.25"
