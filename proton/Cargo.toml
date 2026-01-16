@@ -14,6 +14,3 @@ driver = { path = "../driver" }
 
 [[example]]
 name = "hello"
-
-[[example]]
-name = "image_demo"

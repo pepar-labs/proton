@@ -86,6 +86,25 @@ fn main() -> anyhow::Result<()> {
                         .color(Color::Gray(60)),
                 ),
         )
+        .child(
+            View::row()
+                .gap(20.0)
+                .align(Align::Center)
+                .justify(Justify::Center)
+                .background(Color::Gray(200))
+                .child(
+                    Image::from_path("/home/calc/Pictures/cute-rac.png")
+                        .height(Dimension::Px(500.0))
+                        .width(Dimension::Px(500.0))
+                        .fit(ImageFit::Contain),
+                )
+                .child(
+                    Image::from_path("/home/calc/Pictures/baby-rac.jpg")
+                        .height(Dimension::Px(500.0))
+                        .width(Dimension::Px(500.0))
+                        .fit(ImageFit::Contain),
+                ),
+        )
         .build();
 
     println!("Computing layout");
