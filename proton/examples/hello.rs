@@ -111,6 +111,7 @@ fn main() -> anyhow::Result<()> {
         .build();
 
     println!("Computing layout");
+
     let mut engine = LayoutEngine::new();
     let size = Size::new(width as f32, height as f32);
     let layout = engine.compute(&ui, size);
