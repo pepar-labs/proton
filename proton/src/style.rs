@@ -1,7 +1,6 @@
-//! Style types for Proton UI components
-
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum Color {
+    #[default]
     White,
     Black,
     // 8 bit grayscale
@@ -16,12 +15,6 @@ impl Color {
             Color::Black => 0,
             Color::Gray(v) => *v,
         }
-    }
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Color::White
     }
 }
 

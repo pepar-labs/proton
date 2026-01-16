@@ -258,7 +258,7 @@ fn measure_text_wrapped(
 
     let available_width = known_dimensions
         .width
-        .unwrap_or_else(|| match available_space.width {
+        .unwrap_or(match available_space.width {
             AvailableSpace::Definite(w) => w,
             AvailableSpace::MaxContent => f32::MAX,
             AvailableSpace::MinContent => 0.0,

@@ -191,7 +191,6 @@ impl Renderer {
         let mut cursor_x = start_x;
         let mut prev_glyph: Option<ab_glyph::GlyphId> = None;
 
-
         for ch in text.chars() {
             let glyph_id = self.font.glyph_id(ch);
 
