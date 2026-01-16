@@ -14,3 +14,6 @@ driver = { path = "../driver" }
 
 [[example]]
 name = "hello"
+
+[[example]]
+name = "text_wrap_demo"

@@ -53,7 +53,8 @@ fn main() -> anyhow::Result<()> {
                 .child(Text::new("Framework").size(32.0).color(Color::Black)),
         )
         .child(
-            Text::new("Powered by taffy + ab_glyph")
+            Text::new("Powered by taffy + ab_glyph its gonna be hard i thnk")
+                .wrap(TextWrap::Word)
                 .size(74.0)
                 .color(Color::Black),
         )
@@ -67,43 +68,45 @@ fn main() -> anyhow::Result<()> {
                 .child(Text::new("Features:").size(28.0).color(Color::Black))
                 .child(
                     Text::new("- Flexbox layout")
-                        .size(22.0)
+                        .size(50.0)
                         .color(Color::Gray(60)),
                 )
                 .child(
                     Text::new("- Declarative API")
-                        .size(22.0)
+                        .size(50.0)
                         .color(Color::Gray(60)),
                 )
                 .child(
                     Text::new("- Grayscale rendering")
-                        .size(22.0)
+                        .size(50.0)
                         .color(Color::Gray(60)),
                 )
                 .child(
                     Text::new("- Direct framebuffer rendering")
-                        .size(22.0)
+                        .size(50.0)
                         .color(Color::Gray(60)),
                 ),
         )
         .child(
-            View::row()
+            View::column()
                 .gap(20.0)
+                .padding(20.0)
                 .align(Align::Center)
                 .justify(Justify::Center)
                 .background(Color::Gray(200))
                 .child(
                     Image::from_path("/home/calc/Pictures/cute-rac.png")
-                        .height(Dimension::Px(500.0))
-                        .width(Dimension::Px(500.0))
+                        .height(Dimension::Px(300.0))
+                        .width(Dimension::Px(300.0))
                         .fit(ImageFit::Contain),
                 )
                 .child(
                     Image::from_path("/home/calc/Pictures/baby-rac.jpg")
-                        .height(Dimension::Px(500.0))
-                        .width(Dimension::Px(500.0))
+                        .height(Dimension::Px(300.0))
+                        .width(Dimension::Px(300.0))
                         .fit(ImageFit::Contain),
-                ),
+                )
+                .child(Text::new("Hello images").size(50.0)),
         )
         .build();
 
