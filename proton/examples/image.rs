@@ -53,7 +53,7 @@ fn main() -> Result<()> {
         //         .align(Align::Center),
         // )
         .child(
-            Image::from_path("/home/calc/Pictures/chizuru.jpg")
+            Image::from_path("/home/calc/Pictures/chizuru.webp")
                 .height(Dimension::Percent(1.0))
                 .width(Dimension::Percent(1.0))
                 .fit(proton::ImageFit::Fill),

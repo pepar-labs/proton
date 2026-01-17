@@ -128,7 +128,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     println!("Flushing to display...");
-    device.flush(Mode::GLD16)?;
+    device.flush(Mode::GC16)?;
 
     println!("Done");
     Ok(())

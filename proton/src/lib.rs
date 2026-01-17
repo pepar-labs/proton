@@ -3,6 +3,7 @@ mod layout;
 pub mod nodes;
 mod render;
 mod style;
+mod text;
 
 pub use layout::{LayoutEngine, LayoutNode, LayoutTree};
 pub use render::{RenderTarget, Renderer};
