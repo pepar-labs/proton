@@ -1,3 +1,4 @@
+mod font;
 mod layout;
 pub mod nodes;
 mod render;

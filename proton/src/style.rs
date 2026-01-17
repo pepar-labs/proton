@@ -23,7 +23,9 @@ pub enum Dimension {
     #[default]
     Auto,
     Px(f32),
-    // parent's percent * 100
+    // parent's percent / 100
+    // 1.0 -> full dimension of parent
+    // 0.0 -> nil dimension of parent
     Percent(f32),
 }
 
@@ -122,4 +124,13 @@ pub enum TextAlign {
     Left,
     Center,
     Right,
+}
+#[derive(Debug, Clone, Copy, Default)]
+pub enum TextFont {
+    #[default]
+    NotosansRegular,
+    NotosansItalic,
+    NotosansMono,
+    NotosansBold,
+    NotosansBoldItalic,
 }

@@ -1,5 +1,6 @@
 use crate::nodes::Node;
 use crate::style::{Color, TextAlign, TextOverflow, TextWrap};
+use crate::TextFont;
 
 #[derive(Debug, Clone)]
 pub struct TextNode {
@@ -9,6 +10,7 @@ pub struct TextNode {
     pub wrap: TextWrap,
     pub overflow: TextOverflow,
     pub align: TextAlign,
+    pub font: TextFont,
 }
 
 impl Default for TextNode {
@@ -20,6 +22,7 @@ impl Default for TextNode {
             wrap: TextWrap::None,
             overflow: TextOverflow::Clip,
             align: TextAlign::Left,
+            font: TextFont::NotosansRegular,
         }
     }
 }
@@ -61,6 +64,26 @@ impl Text {
 
     pub fn align(mut self, align: TextAlign) -> Self {
         self.node.align = align;
+        self
+    }
+
+    pub fn font(mut self, font: TextFont) -> Self {
+        self.node.font = font;
+        self
+    }
+
+    pub fn bold(mut self) -> Self {
+        self.node.font = TextFont::NotosansBold;
+        self
+    }
+
+    pub fn italic(mut self) -> Self {
+        self.node.font = TextFont::NotosansItalic;
+        self
+    }
+
+    pub fn mono(mut self) -> Self {
+        self.node.font = TextFont::NotosansMono;
         self
     }
 

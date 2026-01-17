@@ -1,7 +1,10 @@
 use ab_glyph::{point, Font, FontRef, ScaleFont};
 use image::{GrayImage, Luma};
 
-use crate::layout::{wrap_text, LayoutNode, LayoutTree};
+use crate::font::{
+    NOTOSANS_BOLD, NOTOSANS_BOLDITALIC, NOTOSANS_ITALIC, NOTOSANS_MONO, NOTOSANS_REGULAR,
+};
+use crate::layout::{wrap_text, Fonts, LayoutNode, LayoutTree};
 use crate::nodes::Node;
 use crate::nodes::{ImageNode, ImageSource, TextNode, ViewNode};
 use crate::style::{Color, ImageFit, Size, TextAlign, TextOverflow};
@@ -38,15 +41,25 @@ impl RenderTarget for GrayImage {
 }
 
 pub struct Renderer {
-    font: FontRef<'static>,
+    fonts: Fonts,
 }
 
 impl Renderer {
     pub fn new() -> Self {
-        let font_data: &'static [u8] = include_bytes!("../fonts/NotoSans-Regular.ttf");
-        let font = FontRef::try_from_slice(font_data).expect("Failed to load embedded font");
+        let fonts = Fonts {
+            noto_sans_regular: ab_glyph::FontRef::try_from_slice(NOTOSANS_REGULAR)
+                .expect("failed to load noto sans regular font"),
+            noto_sans_italic: ab_glyph::FontRef::try_from_slice(NOTOSANS_ITALIC)
+                .expect("failed to load noto sans italic font"),
+            noto_sans_bold_italic: ab_glyph::FontRef::try_from_slice(NOTOSANS_BOLDITALIC)
+                .expect("failed to load noto sans bold-italic font"),
+            noto_sans_mono: ab_glyph::FontRef::try_from_slice(NOTOSANS_MONO)
+                .expect("failed to load noto sans mono font"),
+            noto_sans_bold: ab_glyph::FontRef::try_from_slice(NOTOSANS_BOLD)
+                .expect("failed to load noto sans bold font"),
+        };
 
-        Self { font }
+        Self { fonts }
     }
 
     pub fn render(&self, layout: &LayoutTree, root: &Node, size: Size) -> GrayImage {
@@ -109,19 +122,14 @@ impl Renderer {
         text: &TextNode,
         layout_node: &LayoutNode,
     ) {
+        let font = self.fonts.get(text.font);
         let rect = &layout_node.rect;
-        let scaled_font = self.font.as_scaled(text.font_size);
+        let scaled_font = font.as_scaled(text.font_size);
         let line_height = scaled_font.height();
         let ascent = scaled_font.ascent();
         let luma = text.color.to_luma();
 
-        let lines = wrap_text(
-            &self.font,
-            &text.content,
-            text.font_size,
-            rect.width,
-            text.wrap,
-        );
+        let lines = wrap_text(font, &text.content, text.font_size, rect.width, text.wrap);
 
         let max_lines = (rect.height / line_height).floor() as usize;
         let max_lines = max_lines.max(1);
@@ -134,12 +142,12 @@ impl Renderer {
             let is_last_visible = line_idx == visible_count - 1;
 
             let line_to_render = if is_last_visible && needs_ellipsis {
-                self.truncate_with_ellipsis(line, text.font_size, rect.width)
+                self.truncate_with_ellipsis(font, line, text.font_size, rect.width)
             } else {
                 line.clone()
             };
 
-            let line_width = self.measure_line(&line_to_render, text.font_size);
+            let line_width = self.measure_line(font, &line_to_render, text.font_size);
 
             let x_offset = match text.align {
                 TextAlign::Left => 0.0,
@@ -152,6 +160,7 @@ impl Renderer {
 
             self.render_line(
                 target,
+                font,
                 &line_to_render,
                 start_x,
                 baseline_y,
@@ -161,13 +170,13 @@ impl Renderer {
         }
     }
 
-    fn measure_line(&self, text: &str, font_size: f32) -> f32 {
-        let scaled_font = self.font.as_scaled(font_size);
+    fn measure_line(&self, font: &FontRef<'static>, text: &str, font_size: f32) -> f32 {
+        let scaled_font = font.as_scaled(font_size);
         let mut width = 0.0f32;
         let mut prev_glyph: Option<ab_glyph::GlyphId> = None;
 
         for ch in text.chars() {
-            let glyph_id = self.font.glyph_id(ch);
+            let glyph_id = font.glyph_id(ch);
             if let Some(prev) = prev_glyph {
                 width += scaled_font.kern(prev, glyph_id);
             }
@@ -181,18 +190,19 @@ impl Renderer {
     fn render_line<T: RenderTarget>(
         &self,
         target: &mut T,
+        font: &FontRef<'static>,
         text: &str,
         start_x: f32,
         baseline_y: f32,
         font_size: f32,
         luma: u8,
     ) {
-        let scaled_font = self.font.as_scaled(font_size);
+        let scaled_font = font.as_scaled(font_size);
         let mut cursor_x = start_x;
         let mut prev_glyph: Option<ab_glyph::GlyphId> = None;
 
         for ch in text.chars() {
-            let glyph_id = self.font.glyph_id(ch);
+            let glyph_id = font.glyph_id(ch);
 
             if let Some(prev) = prev_glyph {
                 cursor_x += scaled_font.kern(prev, glyph_id);
@@ -200,7 +210,7 @@ impl Renderer {
 
             let glyph = glyph_id.with_scale_and_position(font_size, point(cursor_x, baseline_y));
 
-            if let Some(outlined) = self.font.outline_glyph(glyph) {
+            if let Some(outlined) = font.outline_glyph(glyph) {
                 let bounds = outlined.px_bounds();
                 outlined.draw(|px, py, coverage| {
                     let x = bounds.min.x as i32 + px as i32;
@@ -218,9 +228,15 @@ impl Renderer {
         }
     }
 
-    fn truncate_with_ellipsis(&self, text: &str, font_size: f32, max_width: f32) -> String {
+    fn truncate_with_ellipsis(
+        &self,
+        font: &FontRef<'static>,
+        text: &str,
+        font_size: f32,
+        max_width: f32,
+    ) -> String {
         let ellipsis = "...";
-        let ellipsis_width = self.measure_line(ellipsis, font_size);
+        let ellipsis_width = self.measure_line(font, ellipsis, font_size);
         let available_width = max_width - ellipsis_width;
 
         if available_width <= 0.0 {
@@ -229,10 +245,10 @@ impl Renderer {
 
         let mut result = String::new();
         let mut current_width = 0.0f32;
-        let scaled_font = self.font.as_scaled(font_size);
+        let scaled_font = font.as_scaled(font_size);
 
         for ch in text.chars() {
-            let glyph_id = self.font.glyph_id(ch);
+            let glyph_id = font.glyph_id(ch);
             let char_width = scaled_font.h_advance(glyph_id);
 
             if current_width + char_width > available_width {

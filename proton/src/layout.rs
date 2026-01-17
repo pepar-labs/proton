@@ -1,15 +1,40 @@
+use crate::font::{
+    NOTOSANS_BOLD, NOTOSANS_BOLDITALIC, NOTOSANS_ITALIC, NOTOSANS_MONO, NOTOSANS_REGULAR,
+};
 use crate::nodes::{ImageNode, ImageSource, Node, TextNode, ViewNode};
 use crate::style::{
     Align as ProtonAlign, Dimension as ProtonDim, FlexDirection as ProtonDir, ImageFit,
     Justify as ProtonJustify, Rect, Size, TextAlign, TextOverflow, TextWrap,
 };
+use crate::TextFont;
 use ab_glyph::{Font, ScaleFont};
 use image::GenericImageView;
 use taffy::prelude::*;
 
 pub struct LayoutEngine {
     taffy: TaffyTree<NodeData>,
-    font: ab_glyph::FontRef<'static>,
+    fonts: Fonts,
+}
+
+#[derive(Debug, Clone)]
+pub struct Fonts {
+    pub noto_sans_regular: ab_glyph::FontRef<'static>,
+    pub noto_sans_italic: ab_glyph::FontRef<'static>,
+    pub noto_sans_mono: ab_glyph::FontRef<'static>,
+    pub noto_sans_bold: ab_glyph::FontRef<'static>,
+    pub noto_sans_bold_italic: ab_glyph::FontRef<'static>,
+}
+
+impl Fonts {
+    pub fn get(&self, font: TextFont) -> &ab_glyph::FontRef<'static> {
+        match font {
+            TextFont::NotosansRegular => &self.noto_sans_regular,
+            TextFont::NotosansItalic => &self.noto_sans_italic,
+            TextFont::NotosansBold => &self.noto_sans_bold,
+            TextFont::NotosansMono => &self.noto_sans_mono,
+            TextFont::NotosansBoldItalic => &self.noto_sans_bold_italic,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -21,6 +46,7 @@ pub enum NodeData {
         wrap: TextWrap,
         overflow: TextOverflow,
         align: TextAlign,
+        font: TextFont,
     },
     Image {
         source: ImageSource,
@@ -30,13 +56,22 @@ pub enum NodeData {
 
 impl LayoutEngine {
     pub fn new() -> Self {
-        let font_data: &'static [u8] = include_bytes!("../fonts/NotoSans-Regular.ttf");
-        let font =
-            ab_glyph::FontRef::try_from_slice(font_data).expect("Failed to load embedded font");
+        let fonts = Fonts {
+            noto_sans_regular: ab_glyph::FontRef::try_from_slice(NOTOSANS_REGULAR)
+                .expect("failed to load noto sans regular font"),
+            noto_sans_italic: ab_glyph::FontRef::try_from_slice(NOTOSANS_ITALIC)
+                .expect("failed to load noto sans italic font"),
+            noto_sans_bold_italic: ab_glyph::FontRef::try_from_slice(NOTOSANS_BOLDITALIC)
+                .expect("failed to load noto sans bold-italic font"),
+            noto_sans_mono: ab_glyph::FontRef::try_from_slice(NOTOSANS_MONO)
+                .expect("failed to load noto sans mono font"),
+            noto_sans_bold: ab_glyph::FontRef::try_from_slice(NOTOSANS_BOLD)
+                .expect("failed to load noto sans bold font"),
+        };
 
         Self {
             taffy: TaffyTree::new(),
-            font,
+            fonts,
         }
     }
 
@@ -45,7 +80,7 @@ impl LayoutEngine {
 
         let root_id = self.build_taffy_node(root);
 
-        let font = self.font.clone();
+        let fonts = self.fonts.clone();
 
         self.taffy
             .compute_layout_with_measure(
@@ -55,7 +90,7 @@ impl LayoutEngine {
                     height: AvailableSpace::Definite(available.height),
                 },
                 |known_dimensions, available_space, _node_id, node_context, _style| {
-                    measure_node(&font, known_dimensions, available_space, node_context)
+                    measure_node(&fonts, known_dimensions, available_space, node_context)
                 },
             )
             .expect("Layout computation failed");
@@ -122,6 +157,7 @@ impl LayoutEngine {
                     wrap: text.wrap,
                     overflow: text.overflow,
                     align: text.align,
+                    font: text.font,
                 },
             )
             .expect("Failed to create text node")
@@ -202,7 +238,7 @@ pub struct LayoutNode {
 }
 
 fn measure_node(
-    font: &ab_glyph::FontRef<'static>,
+    fonts: &Fonts,
     known_dimensions: taffy::Size<Option<f32>>,
     available_space: taffy::Size<AvailableSpace>,
     node_context: Option<&mut NodeData>,
@@ -223,9 +259,10 @@ fn measure_node(
             content,
             font_size,
             wrap,
+            font: text_font,
             ..
         }) => measure_text_wrapped(
-            font,
+            fonts.get(*text_font),
             content,
             *font_size,
             *wrap,

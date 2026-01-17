@@ -1,8 +1,8 @@
 use anyhow::{Ok, Result};
 use driver::Device;
 use proton::{
-    nodes::{Image, View},
-    Dimension, LayoutEngine, RenderTarget, Renderer, Size,
+    nodes::{Image, Text, View},
+    Align, Dimension, LayoutEngine, RenderTarget, Renderer, Size,
 };
 
 struct DeviceTarget<'a> {
@@ -40,11 +40,23 @@ fn main() -> Result<()> {
         .height(Dimension::Percent(1.0))
         .justify(proton::Justify::Center)
         .align(proton::Align::Center)
+        // .child(
+        //     View::row()
+        //         .background(proton::Color::Black)
+        //         .child(
+        //             Text::new("Jujutsu Kaisen")
+        //                 .size(70.0)
+        //                 .color(proton::Color::White),
+        //         )
+        //         .width(Dimension::Percent(1.0))
+        //         .justify(proton::Justify::Center)
+        //         .align(Align::Center),
+        // )
         .child(
-            Image::from_path("/home/calc/Pictures/baby-rac.jpg")
+            Image::from_path("/home/calc/Pictures/chizuru.jpg")
                 .height(Dimension::Percent(1.0))
                 .width(Dimension::Percent(1.0))
-                .fit(proton::ImageFit::Contain),
+                .fit(proton::ImageFit::Fill),
         )
         .build();
 
