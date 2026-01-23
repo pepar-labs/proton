@@ -1,4 +1,4 @@
-use driver::{Device, Rotation};
+use it8951::{Device, Rotation};
 use proton::prelude::*;
 
 struct DeviceTarget<'a> {
@@ -241,7 +241,7 @@ fn main() -> anyhow::Result<()> {
         };
         renderer.render_to(&mut target, &layout, &ui);
     }
-    device.flush(driver::Mode::GLD16)?;
+    device.flush(it8951::Mode::GLD16)?;
 
     let output_path = "text_wrap_demo.png";
     println!("Saved to: {}", output_path);

@@ -1,7 +1,19 @@
-[workspace]
-resolver = "2"
-members = ["driver", "proton"]
+[package]
+name = "proton"
+version = "0.1.0"
+edition = "2021"
 
-[workspace.dependencies]
-anyhow = "1.0"
-image = "0.25"
+[dependencies]
+taffy = "0.7"
+image = { workspace = true }
+ab_glyph = "0.2"
+
+[dev-dependencies]
+anyhow = { workspace = true }
+it8951 = { path = "../it8951" }
+
+[[example]]
+name = "hello"
+
+[[example]]
+name = "text_wrap_demo"

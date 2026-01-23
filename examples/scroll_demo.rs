@@ -1,4 +1,4 @@
-use driver::{Device, Mode, Rotation};
+use it8951::{Device, Mode, Rotation};
 use proton::prelude::*;
 use std::time::Duration;
 

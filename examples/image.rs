@@ -1,8 +1,8 @@
 use anyhow::{Ok, Result};
-use driver::Device;
+use it8951::Device;
 use proton::{
-    nodes::{Image, Text, View},
-    Align, Dimension, LayoutEngine, RenderTarget, Renderer, Size,
+    nodes::{Image, View},
+    Dimension, LayoutEngine, RenderTarget, Renderer, Size,
 };
 
 struct DeviceTarget<'a> {
@@ -31,7 +31,7 @@ impl<'a> RenderTarget for DeviceTarget<'a> {
 
 fn main() -> Result<()> {
     let mut device = Device::connect()?;
-    device.set_rotation(driver::Rotation::Rotate270);
+    device.set_rotation(it8951::Rotation::Rotate270);
     let (width, height) = device.dimensions();
     device.clear_framebuffer();
 
@@ -74,6 +74,6 @@ fn main() -> Result<()> {
         renderer.render_to(&mut target, &layout, &ui);
     }
 
-    device.flush(driver::Mode::GLD16)?;
+    device.flush(it8951::Mode::GLD16)?;
     Ok(())
 }
