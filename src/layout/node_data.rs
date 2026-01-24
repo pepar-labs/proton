@@ -20,4 +20,10 @@ pub enum NodeData {
         scroll_offset: f32,
         content_height: f32,
     },
+    ListView {
+        scroll_offset: f32,
+        selected_index: Option<usize>,
+        content_height: f32,
+    },
 }
+

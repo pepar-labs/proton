@@ -2,7 +2,7 @@ use image::GenericImageView;
 use taffy::prelude::*;
 
 use crate::font::Fonts;
-use crate::nodes::{ImageNode, ImageSource, Node, ScrollViewNode, TextNode, ViewNode};
+use crate::nodes::{ImageNode, ImageSource, ListViewNode, Node, ScrollViewNode, TextNode, ViewNode};
 use crate::style::{Dimension as ProtonDim, Rect, Size, TextWrap};
 use crate::text::{line_height, measure_text_width, wrap_text};
 
@@ -55,6 +55,7 @@ impl LayoutEngine {
             Node::Text(text) => self.build_text_node(text),
             Node::Image(img) => self.build_image_node(img),
             Node::ScrollView(scroll) => self.build_scroll_view_node(scroll),
+            Node::ListView(list) => self.build_list_view_node(list),
         }
     }
 
@@ -169,7 +170,6 @@ impl LayoutEngine {
                 width: convert_dimension(scroll.width),
                 height: convert_dimension(scroll.height),
             },
-            // Allow content to overflow - this is what makes it scrollable
             overflow: taffy::Point {
                 x: taffy::Overflow::Visible,
                 y: taffy::Overflow::Scroll,
@@ -180,7 +180,6 @@ impl LayoutEngine {
         self.taffy
             .new_with_children(style, &child_ids)
             .map(|node_id| {
-                // We'll compute content_height after layout, for now use 0
                 self.taffy
                     .set_node_context(
                         node_id,
@@ -193,6 +192,57 @@ impl LayoutEngine {
                 node_id
             })
             .expect("Failed to create scroll view node")
+    }
+
+    fn build_list_view_node(&mut self, list: &ListViewNode) -> NodeId {
+        let child_ids: Vec<NodeId> = list
+            .children
+            .iter()
+            .map(|child| self.build_taffy_node(child))
+            .collect();
+
+        let style = Style {
+            display: Display::Flex,
+            flex_direction: convert_direction(list.direction),
+            justify_content: Some(convert_justify(list.justify)),
+            align_items: Some(convert_align(list.align)),
+            padding: taffy::Rect {
+                left: LengthPercentage::Length(list.padding),
+                right: LengthPercentage::Length(list.padding),
+                top: LengthPercentage::Length(list.padding),
+                bottom: LengthPercentage::Length(list.padding),
+            },
+            gap: taffy::Size {
+                width: LengthPercentage::Length(list.gap),
+                height: LengthPercentage::Length(list.gap),
+            },
+            size: taffy::Size {
+                width: convert_dimension(list.width),
+                height: convert_dimension(list.height),
+            },
+            overflow: taffy::Point {
+                x: taffy::Overflow::Visible,
+                y: taffy::Overflow::Scroll,
+            },
+            ..Default::default()
+        };
+
+        self.taffy
+            .new_with_children(style, &child_ids)
+            .map(|node_id| {
+                self.taffy
+                    .set_node_context(
+                        node_id,
+                        Some(NodeData::ListView {
+                            scroll_offset: list.scroll_offset,
+                            selected_index: list.selected_index,
+                            content_height: 0.0,
+                        }),
+                    )
+                    .expect("Failed to set list view context");
+                node_id
+            })
+            .expect("Failed to create list view node")
     }
 
     fn extract_layout(
@@ -213,7 +263,6 @@ impl LayoutEngine {
 
         let mut data = self.taffy.get_node_context(node_id).cloned();
 
-        // For ScrollView, calculate the actual content height from children
         if let Some(NodeData::ScrollView {
             scroll_offset,
             content_height: _,
@@ -233,6 +282,31 @@ impl LayoutEngine {
 
             data = Some(NodeData::ScrollView {
                 scroll_offset: *scroll_offset,
+                content_height: total_content_height,
+            });
+        }
+
+        if let Some(NodeData::ListView {
+            scroll_offset,
+            selected_index,
+            content_height: _,
+        }) = &data
+        {
+            let children = self.taffy.children(node_id).expect("Should get children");
+            let mut total_content_height = 0.0f32;
+
+            for child_id in &children {
+                let child_layout = self
+                    .taffy
+                    .layout(*child_id)
+                    .expect("Child should have layout");
+                let child_bottom = child_layout.location.y + child_layout.size.height;
+                total_content_height = total_content_height.max(child_bottom);
+            }
+
+            data = Some(NodeData::ListView {
+                scroll_offset: *scroll_offset,
+                selected_index: *selected_index,
                 content_height: total_content_height,
             });
         }

@@ -2,7 +2,7 @@ use image::{GrayImage, Luma};
 
 use crate::font::Fonts;
 use crate::layout::{LayoutNode, LayoutTree, NodeData};
-use crate::nodes::{Node, ScrollViewNode, ViewNode};
+use crate::nodes::{ListViewNode, Node, ScrollViewNode, ViewNode};
 use crate::style::{Rect, Size};
 
 use super::image::render_image;
@@ -53,6 +53,9 @@ impl Renderer {
             Node::ScrollView(scroll) => {
                 self.render_scroll_view(target, scroll, layout_node, layout, index)
             }
+            Node::ListView(list) => {
+                self.render_list_view(target, list, layout_node, layout, index)
+            }
         }
     }
 
@@ -89,7 +92,6 @@ impl Renderer {
     ) -> usize {
         let rect = &layout_node.rect;
 
-        // Get scroll offset from NodeData
         let scroll_offset =
             if let Some(NodeData::ScrollView { scroll_offset, .. }) = &layout_node.data {
                 *scroll_offset
@@ -97,12 +99,10 @@ impl Renderer {
                 scroll.scroll_offset
             };
 
-        // Draw background if present
         if let Some(color) = scroll.background {
             fill_rect_clipped(target, rect.x, rect.y, rect.width, rect.height, color, None);
         }
 
-        // Create clip rect for this scroll view (the viewport)
         let clip_rect = Rect {
             x: rect.x,
             y: rect.y,
@@ -110,9 +110,72 @@ impl Renderer {
             height: rect.height,
         };
 
-        // Render children with scroll offset applied
         let mut next_index = index + 1;
         for child in &scroll.children {
+            next_index = self.render_node_scrolled(
+                target,
+                child,
+                layout,
+                next_index,
+                &clip_rect,
+                scroll_offset,
+            );
+        }
+
+        next_index
+    }
+
+    fn render_list_view<T: RenderTarget>(
+        &self,
+        target: &mut T,
+        list: &ListViewNode,
+        layout_node: &LayoutNode,
+        layout: &LayoutTree,
+        index: usize,
+    ) -> usize {
+        let rect = &layout_node.rect;
+
+        let (scroll_offset, selected_index) =
+            if let Some(NodeData::ListView { scroll_offset, selected_index, .. }) = &layout_node.data {
+                (*scroll_offset, *selected_index)
+            } else {
+                (list.scroll_offset, list.selected_index)
+            };
+
+        if let Some(color) = list.background {
+            fill_rect_clipped(target, rect.x, rect.y, rect.width, rect.height, color, None);
+        }
+
+        let clip_rect = Rect {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+        };
+
+        let mut next_index = index + 1;
+        for (child_idx, child) in list.children.iter().enumerate() {
+            let is_selected = selected_index == Some(child_idx);
+            
+            if is_selected {
+                if next_index < layout.nodes.len() {
+                    let child_layout = &layout.nodes[next_index];
+                    let adjusted_y = child_layout.rect.y - scroll_offset;
+                    
+                    if adjusted_y + child_layout.rect.height > rect.y && adjusted_y < rect.y + rect.height {
+                        fill_rect_clipped(
+                            target,
+                            child_layout.rect.x,
+                            adjusted_y,
+                            child_layout.rect.width,
+                            child_layout.rect.height,
+                            list.selected_background,
+                            Some(&clip_rect),
+                        );
+                    }
+                }
+            }
+            
             next_index = self.render_node_scrolled(
                 target,
                 child,
@@ -149,6 +212,9 @@ impl Renderer {
             Node::ScrollView(scroll) => {
                 self.render_scroll_view(target, scroll, layout_node, layout, index)
             }
+            Node::ListView(list) => {
+                self.render_list_view(target, list, layout_node, layout, index)
+            }
         }
     }
 
@@ -163,7 +229,6 @@ impl Renderer {
     ) -> usize {
         let layout_node = &layout.nodes[index];
 
-        // Create an adjusted layout node with scroll offset applied
         let adjusted_rect = Rect {
             x: layout_node.rect.x,
             y: layout_node.rect.y - scroll_offset,
@@ -194,8 +259,10 @@ impl Renderer {
                 index + 1
             }
             Node::ScrollView(scroll) => {
-                // Nested scroll views - just render normally for now
                 self.render_scroll_view(target, scroll, &adjusted_layout_node, layout, index)
+            }
+            Node::ListView(list) => {
+                self.render_list_view(target, list, &adjusted_layout_node, layout, index)
             }
         }
     }

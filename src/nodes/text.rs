@@ -32,6 +32,31 @@ pub struct Text {
     node: TextNode,
 }
 
+#[derive(Debug, Clone)]
+pub struct TextSpan {
+    pub content: String,
+    pub font_size: f32,
+    pub color: Color,
+    pub wrap: TextWrap,
+    pub overflow: TextOverflow,
+    pub align: TextAlign,
+    pub font: TextFont,
+}
+
+impl Default for TextSpan {
+    fn default() -> Self {
+        Self {
+            content: String::new(),
+            font_size: 24.0,
+            color: Color::Black,
+            wrap: TextWrap::Word,
+            overflow: TextOverflow::Clip,
+            align: TextAlign::Left,
+            font: TextFont::NotosansRegular,
+        }
+    }
+}
+
 impl Text {
     pub fn new(content: impl Into<String>) -> Self {
         Self {

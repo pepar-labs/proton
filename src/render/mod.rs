@@ -5,4 +5,4 @@ mod target;
 mod text;
 
 pub use renderer::Renderer;
-pub use target::RenderTarget;
+pub use target::{DeviceAPI, DisplayMode, RenderTarget, Rotation};
